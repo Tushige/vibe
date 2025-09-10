@@ -4,9 +4,11 @@
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 
 function Home() {
+  const [value, setValue] = useState("")
   const trpc = useTRPC()
   const invoke = useMutation(trpc.invoke.mutationOptions({
     onSuccess: () => {
@@ -15,8 +17,9 @@ function Home() {
     }
   }))
   return (
-    <div className="p-4 max-w-7xl mx-auto">
-      <Button disabled={invoke.isPending} onClick={() => invoke.mutate({text: "test@gmail.com"})}>Invoke Background Job</Button>
+    <div className="p-4 max-w-7xl mx-auto flex flex-col gap-4">
+      <input value={value} onChange={(e) => setValue(e.target.value)}/>
+      <Button disabled={invoke.isPending} onClick={() => invoke.mutate({value})}>Invoke Background Job</Button>
     </div>
   )
 }
