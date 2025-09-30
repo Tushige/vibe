@@ -1,13 +1,7 @@
 import { ProjectView } from "@/modules/projects/ui/views/project-view";
-import { useTRPC } from "@/trpc/client";
 import { getQueryClient, trpc } from "@/trpc/server";
-import {
-  dehydrate,
-  HydrationBoundary,
-  useMutation,
-} from "@tanstack/react-query";
-import { useRouter } from "next/router";
-import { Suspense, useState } from "react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
