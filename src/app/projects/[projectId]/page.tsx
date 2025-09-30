@@ -1,11 +1,7 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/router";
-import { useState } from "react";
-import { toast } from "sonner";
+import { ProjectView } from "@/modules/projects/ui/views/project-view";
+import { getQueryClient, trpc } from "@/trpc/server";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -13,9 +9,24 @@ interface Props {
   }>;
 }
 
-async function ProjectPage({ params }: Props) {
+async function Page({ params }: Props) {
   const { projectId } = await params;
+  const queryClient = getQueryClient();
 
-  return <h1>Project: {projectID}</h1>;
+  void queryClient.prefetchQuery(
+    trpc.messages.getMany.queryOptions({ projectId })
+  );
+
+  void queryClient.prefetchQuery(
+    trpc.projects.getOne.queryOptions({ id: projectId })
+  );
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<p>loading project view...</p>}>
+        <ProjectView projectId={projectId} />
+      </Suspense>
+    </HydrationBoundary>
+  );
 }
-export default ProjectPage;
+export default Page;
