@@ -23,7 +23,7 @@ const formSchema = z.object({
   projectId: z.string().min(1, { message: "Project ID is required" }),
 });
 
-export const MessageForm = ([projectId]: MessageFormProps) => {
+export const MessageForm = ({ projectId }: MessageFormProps) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [isFocused, setIsFocused] = useState(false);
@@ -72,7 +72,7 @@ export const MessageForm = ([projectId]: MessageFormProps) => {
         <FormField
           control={form.control}
           name="value"
-          render={({ field }) => {
+          render={({ field }) => (
             <TextareaAutosize
               {...field}
               disabled={isPending}
@@ -82,8 +82,8 @@ export const MessageForm = ([projectId]: MessageFormProps) => {
               maxRows={8}
               className="pt-4 resize-none border-none w-full outline-none bg-transparent"
               placeholder="What would you like to build?"
-            />;
-          }}
+            />
+          )}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlrKey || e.metaKey)) {
               e.preventDefault();

@@ -6,9 +6,9 @@ import {
   createNetwork,
   type Tool,
 } from "@inngest/agent-kit";
+import { z } from "zod";
 import { Sandbox } from "@e2b/code-interpreter";
 import { getSandbox, lastAssistantTextMessageContent } from "./utils";
-import z from "zod";
 import { PROMPT } from "@/prompt";
 import { prisma } from "@/lib/db";
 
@@ -25,11 +25,29 @@ const terminalInputSchema = z.object({
     .describe("Optional working directory to run the command in"),
   timeout: z
     .number()
-    .optional()
     .default(30000)
     .describe("Timeout in milliseconds (default: 30s)"),
 });
 
+// const terminalInputSchema = {
+//   type: "object",
+//   properties: {
+//     command: {
+//       type: "string",
+//       description: "The terminal command to execute",
+//     },
+//     workingDirectory: {
+//       type: "string",
+//       description: "Optional working directory to run the command in",
+//     },
+//     timeout: {
+//       type: "number",
+//       description: "Timeout in milliseconds (default: 30s)",
+//       default: 30000,
+//     },
+//   },
+//   required: ["command"],
+// };
 const createOrUpdateSchema = z.object({
   files: z.array(
     z.object({
@@ -39,12 +57,44 @@ const createOrUpdateSchema = z.object({
   ),
 });
 const readSchema = z.object({
-  files: z.array(
-    z.object({
-      path: z.string(),
-    })
-  ),
+  files: z.array(z.string()),
 });
+// createOrUpdateSchema
+// const createOrUpdateSchema = {
+//   type: "object",
+//   properties: {
+//     files: {
+//       type: "array",
+//       items: {
+//         type: "object",
+//         properties: {
+//           path: {
+//             type: "string",
+//           },
+//           content: {
+//             type: "string",
+//           },
+//         },
+//         required: ["path", "content"],
+//       },
+//     },
+//   },
+//   required: ["files"],
+// };
+
+// // readSchema
+// const readSchema = {
+//   type: "object",
+//   properties: {
+//     files: {
+//       type: "array",
+//       items: {
+//         type: "string",
+//       },
+//     },
+//   },
+//   required: ["files"],
+// };
 export const codeAgentFunc = inngest.createFunction(
   { id: "code-agent" },
   { event: "code-agent/run" },
@@ -62,12 +112,15 @@ export const codeAgentFunc = inngest.createFunction(
       description: "An Expert coding agent",
       system: PROMPT,
       model: openai({
-        model: "gpt-4.1",
+        model: "gpt-4o",
         defaultParameters: {
           temperature: 0.1,
         },
       }),
       tools: [
+        /**
+         * 1. TERMINAL TOOL
+         */
         createTool({
           name: "terminal",
           description: "use the terminal to run commands.",
@@ -94,6 +147,9 @@ export const codeAgentFunc = inngest.createFunction(
             });
           },
         }),
+        /**
+         * 2. Create/Update FILE TOOL
+         */
         createTool({
           name: "createOrUpdateFile",
           description: "Create or Update files in the sandbox",
@@ -112,7 +168,10 @@ export const codeAgentFunc = inngest.createFunction(
                 }
                 return { success: true, files: updatedFiles };
               } catch (err) {
-                return "Error: " + err;
+                return {
+                  success: false,
+                  error: `Error: ` + err,
+                };
               }
             });
             if (result?.success) {
@@ -132,6 +191,7 @@ export const codeAgentFunc = inngest.createFunction(
                 const sandbox = await getSandbox(sandboxId);
                 const contents = [];
                 for (const file of files) {
+                  // TODO - is it file.path or file. THe doc implies read takes a string of path. But Antonio's work so what?
                   const content = await sandbox.files.read(file);
                   contents.push({ path: file, content });
                 }

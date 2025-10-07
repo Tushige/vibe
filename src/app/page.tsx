@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -14,12 +14,15 @@ function Home() {
   const createProject = useMutation(
     trpc.projects.create.mutationOptions({
       onSuccess: (res) => {
+        console.log("[PAGE] created project");
+        console.log(res);
         if (res.ok == "success") {
-          const { data } = res;
-          router.push(`/projects/${data.id}`);
+          const { project } = res;
+          router.push(`/projects/${project.id}`);
         }
       },
       onError: (err) => {
+        console.log();
         toast.error(err.message);
       },
     })
